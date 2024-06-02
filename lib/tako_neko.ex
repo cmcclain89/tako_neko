@@ -14,33 +14,16 @@ defmodule TakoNeko do
       :world
 
   """
-  def get(%TakoNeko.Request{} = request, path) do
+  def get!(%TakoNeko.Request{} = request, path) do
     build_req(request, path)
     |> Req.get!()
+    |> TakoNeko.Response.new(request.client)
   end
 
-  def get(%TakoNeko.Request{} = request, path, module) do
+  def get!(%TakoNeko.Request{} = request, path, module) do
     build_req(request, path)
     |> Req.get!()
-    |> cast_response(module)
-  end
-
-  @spec cast_response(Req.Response.t(), module) :: [struct]
-  def cast_response(%Req.Response{} = response, module) do
-    case response.body do
-      [%{} | _] ->
-        Enum.map(response.body, fn event ->
-          atomized_event =
-            Enum.map(event, fn {k, v} ->
-              {String.to_atom(k), v}
-            end)
-
-          struct(module, atomized_event)
-        end)
-
-      _ ->
-        raise ArgumentError, "bummer!"
-    end
+    |> TakoNeko.Response.new(request.client, module)
   end
 
   defp build_req(%TakoNeko.Request{} = request, path) do
